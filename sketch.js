@@ -2,14 +2,15 @@ var movers = [];
 var littleMovers = [];
 var attractor; var shark;
 var G = 1;
+var yoff = 0.0;
 
 function setup() {
-  createCanvas(900,500);
-  background(176,196,222);
-  for (var i = 0; i < 75; i++) {
+  createCanvas(1000,500);
+  background(255);
+  for (var i = 0; i < 40; i++) {
     movers[i] = new Mover();
   }
-  for (var j = 0; j < 50; j++) {
+  for (var j = 0; j < 40; j++) {
     littleMovers[j] = new LittleMover();
   }
   attractor = new Attractor();
@@ -17,7 +18,35 @@ function setup() {
 }
 
 function draw() {
-  background(176,196,222);
+  background(255);
+  fill(176,196,222);
+  noStroke();
+  // We are going to draw a polygon out of the wave points
+  beginShape();
+
+  var xoff = 0;       // Option #1: 2D Noise
+  // var xoff = yoff; // Option #2: 1D Noise
+
+  // Iterate over horizontal pixels
+  for (var x = 0; x <= width; x += 10) {
+    // Calculate a y value according to noise, map to
+
+    // Option #1: 2D Noise
+    var y = map(noise(xoff, yoff), 0, 1, 0,100);
+
+    // Option #2: 1D Noise
+    // var y = map(noise(xoff), 0, 1, 200,300);
+
+    // Set the vertex
+    vertex(x, y);
+    // Increment x dimension for noise
+    xoff += 0.05;
+  }
+  // increment y dimension for noise
+  yoff += 0.01;
+  vertex(width, height);
+  vertex(0, height);
+  endShape(CLOSE);
 
   for (var i = 0; i < movers.length; i++) {
     var follow = p5.Vector.sub(attractor.position, movers[i].position);
@@ -32,6 +61,7 @@ function draw() {
         movers[i].applyForce(sharkForce);
       }
     }
+    movers[i].checkEdges();
     movers[i].update();
     movers[i].display();
   }
@@ -68,9 +98,32 @@ function Mover() {
   };
 
   this.display = function() {
+    var angle = this.velocity.heading();
     noStroke();
     fill(this.fill);
-    ellipse(this.position.x, this.position.y, this.radius*2, this.radius*2);
+    rectMode(CENTER);
+    push();
+    translate(this.position.x, this.position.y);
+    rotate(angle);
+    rect(0, 0, this.radius*3, this.radius);
+    pop();
+  };
+
+  this.checkEdges = function() {
+    if (this.position.x > width + 200) {
+      this.position.x = width;
+      this.velocity.x *= -1;
+    } else if (this.position.x < 0 - 200) {
+      this.velocity.x *= -1;
+      this.position.x = 0;
+    }
+    if (this.position.y > height + 200) {
+      this.velocity.y *= -1;
+      this.position.y = height;
+    } else if (this.position.y < 80) {
+      this.velocity.y *= -1;
+      this.position.y = 81;
+    }
   };
 
   this.calculateAttraction = function(m) {
@@ -103,7 +156,7 @@ function LittleMover() {
 
   this.update = function() {
     this.acceleration.x = map(noise(this.noff.x), 0, 1, -1, 1);
-    this.acceleration.y = map(noise(this.noff.y), 0, 1, -1, 1);
+    this.acceleration.y = map(noise(this.noff.y), 0, 1, -0.2, 0.25);
     this.noff.add(0.01,0.01,0);
     this.velocity.add(this.acceleration);
     this.velocity.limit(this.topspeed);
@@ -127,28 +180,29 @@ function LittleMover() {
     if (this.position.y > height + 200) {
       this.velocity.y *= -1;
       this.position.y = height;
-    } else if (this.position.y < 0 - 200) {
+    } else if (this.position.y < 80) {
       this.velocity.y *= -1;
-      this.position.y = 0;
+      this.position.y = 81;
     }
   };
 }
 
 function Attractor() {
   this.position = createVector(width/2, height/2);
-  this.fill = random(100, 255);
+  // this.fill = random(100, 255);
   this.noff = createVector(random(1000),random(1000));
 
   this.display = function() {
-    fill(this.fill);
+    // fill(this.fill);
+    fill(0, 0);
     noStroke();
     ellipse(this.position.x, this.position.y, 48, 48);
   };
 
   this.update = function() {
     this.position.x = map(noise(this.noff.x),0,1,0,width);
-    this.position.y = map(noise(this.noff.y),0,1,0,height);
-    this.noff.add(0.003,0.003,0);
+    this.position.y = map(noise(this.noff.y),0,1,100,height);
+    this.noff.add(0.01,0.01,0);
   };
 }
 
