@@ -21,34 +21,30 @@ function setup() {
 
   flock = new Flock();
   // Add an initial set of boids into the system
-  for (var i = 0; i < 60; i++) {
-    var b = new Boid(random(width),random(height));
+  for (var i = 0; i < 30; i++) {
+    var b = new Boid(random(0, width/2),random(0, height/2));
     flock.addBoid(b);
   }
   flock2 = new Flock();
-  for (var j = 0; j < 60; j++) {
-    var b = new Boid(random(width),random(height));
+  for (var j = 0; j < 30; j++) {
+    var b = new Boid(random(width/2, width),random(height/2, height));
     flock2.addBoid(b);
   }
   // constructTrees();
   // World starts with 10 creatures
   // and 10 pieces of food
-  world = new World(10);
+  world = new World(12);
   sharks = [new Shark(), new Shark()];
+  // Set in motion before drawing
+  for (var h = 0; h < 100; h++) {
+    world.run();
+  }
 }
 
 function draw() {
   setGradient(0, 0, width, height, c1, c2);
 
-  // fill(237, 201, 175);
-  // rect(0, height - 35, width, 35);
-  flock.run();
   world.run();
-  // for (var i = 0; i < trees.length; i++) {
-  //   for (var j = 0; j < tree.length; j++) {
-  //     trees[i][j].show();
-  //   }
-  // }
 }
 
 function setGradient(x, y, w, h, c1, c2) {
@@ -61,7 +57,6 @@ function setGradient(x, y, w, h, c1, c2) {
   }
 }
 
-// We can add a creature manually if we so desire
 function mousePressed() {
   world.born(mouseX,mouseY);
 }
@@ -69,78 +64,6 @@ function mousePressed() {
 function mouseDragged() {
   world.born(mouseX,mouseY);
 }
-
-// function constructTree() {
-//   var count = 0;
-//   while (count < 3) {
-//     for (var i = tree.length - 1; i >= 0; i--) {
-//       if (!tree[i].finished) {
-//         tree.push(tree[i].branchA());
-//         tree.push(tree[i].branchB());
-//       }
-//       tree[i].finished = true;
-//     }
-//     count++;
-//   }
-//   trees.push(tree);
-// }
-
-// function constructTrees() {
-//   var treeX = 0;
-//   while (treeX < width) {
-//     tree = [];
-//     var branchSize = random(3, 10);
-//     var a = createVector(treeX, height + 40);
-//     var b = createVector(treeX + random(-20, 20), height - random(0, 40));
-//     var root = new Branch(a, b, branchSize);
-
-//     tree[0] = root;
-//     constructTree();
-//     treeX += random(8, 100);
-//   }
-// }
-
-// function Branch(begin, end, branchSize) {
-//   this.begin = begin;
-//   this.end = end;
-//   this.finished = false;
-//   var randVal = random();
-//   if (random() < 0.5) {
-//     this.darker = false;
-//   } else {
-//     this.darker = true;
-//   }
-
-  // this.show = function() {
-  //   if (this.darker) {
-  //     stroke(170,215,188)
-  //   } else {
-  //     stroke(235,255,235)
-  //   }
-  //   strokeWeight(branchSize);
-  //   line(this.begin.x, this.begin.y, this.end.x, this.end.y);
-  //   fill(123);
-  //   strokeWeight(5);
-  //   ellipse(this.end.x, this.end.y, 8, 8);
-  // }
-
-  // this.branchA = function() {
-  //   var dir = p5.Vector.sub(this.end, this.begin);
-  //   dir.rotate(random(PI / 12, PI/36));
-  //   dir.mult(random(0.4, 1));
-  //   var newEnd = p5.Vector.add(this.end, dir);
-  //   var b = new Branch(this.end, newEnd, branchSize);
-  //   return b;
-  // }
-//   this.branchB = function() {
-//     var dir = p5.Vector.sub(this.end, this.begin);
-//     dir.rotate(random(-PI/12, -PI/36));
-//     dir.mult(random(0.4, 1));
-//     var newEnd = p5.Vector.add(this.end, dir);
-//     var b = new Branch(this.end, newEnd, branchSize);
-//     return b;
-//   }
-// }
 
 // Constructor
 function World(num) {
@@ -162,6 +85,8 @@ function World(num) {
 
   // Run the world
   this.run = function() {
+    flock.run();
+    flock2.run();
     // Deal with food
     this.food.run();
 
@@ -244,7 +169,7 @@ function Food(num) {
     }
 
     // There's a small chance food will appear randomly
-    if (random(1) < 0.07) {
+    if (random(1) < 0.03) {
       var position = createVector(random(width),random(height));
       this.food.push(new fishFood(position));
     }
@@ -299,7 +224,7 @@ function DNA(newgenes) {
     // DNA is random floating point values between 0 and 1 (!!)
     this.genes = new Array(1);
     for (var i = 0; i < this.genes.length; i++) {
-      this.genes[i] = random(0,1);
+      this.genes[i] = random(70,230);
     }
   }
 
@@ -317,7 +242,7 @@ function DNA(newgenes) {
   this.mutate = function(m) {
     for (var i = 0; i < this.genes.length; i++) {
       if (random(1) < m) {
-         this.genes[i] = random(0,1);
+         this.genes[i] = random(70,230);
       }
     }
   }
@@ -330,15 +255,20 @@ function Bloop(l, dna_) {
   this.xoff = random(1000);  // For perlin noise
   this.yoff = random(1000);
   this.dna = dna_;   // DNA
-  // DNA will determine size and maxspeed
-  // The bigger the bloop, the slower it is
-  this.maxspeed = map(this.dna.genes[0], 0, 1, 5, 3);
-  this.maxforce = 0.15;
-  this.r = map(this.dna.genes[0], 0, 1, 15, 50);
+  // DNA will determine color and maxspeed
+  // The lighter the bloop, the slower it is
+  this.maxspeed = map(this.dna.genes[0], 70, 230, 4, 0.75);
+  this.maxforce = map(this.dna.genes[0], 70, 230, 0.40, 0.075);
+  this.r = 30;
   this.acceleration = createVector(0, 0);
   this.velocity = createVector(random(-1, 1), random(-1, 1));
-  this.fill = random(54, 155);
-  this.sightRadius = 400;
+  this.fill = this.dna.genes[0];
+  this.sightRadius = map(this.dna.genes[0], 70, 230, 500, 200);
+  if (random(1) < 0.25) {
+    this.secondarySexChar = true;
+  } else {
+    this.secondarySexChar = false;
+  }
 
   this.run = function() {
     this.update();
@@ -364,12 +294,22 @@ function Bloop(l, dna_) {
   // At any moment there is a teeny, tiny chance a bloop will reproduce
   this.reproduce = function() {
     // asexual reproduction
-    if (random(1) < 0.0005) {
+    var reproductionChance = 0.0005;
+    // Impressive Green markings on a fish's back get the fish rewarded with a doubled chance of reproduction at any given moment
+    if (this.secondarySexChar) {
+      reproductionChance = 0.001;
+    }
+    if (random(1) < reproductionChance) {
       // Child is exact copy of single parent
       var childDNA = this.dna.copy();
       // Child DNA can mutate
-      childDNA.mutate(0.01);
-      return new Bloop(this.position, childDNA);
+      childDNA.mutate(0.1);
+      var child = new Bloop(this.position, childDNA);
+      // 80% chance the child will inherit the green stars on its back if its parent has them
+      if (this.secondarySexChar && random(1) < 0.8) {
+        child.secondarySexChar = true;
+      }
+      return child;
     }
     else {
       return null;
@@ -494,6 +434,11 @@ function Bloop(l, dna_) {
     fill(98);
     ellipse(this.r/4, -this.r/4, 4, 4);
     ellipse(this.r/4, this.r/4, 4, 4);
+    if (this.secondarySexChar) {
+      fill(213, 255, 156);
+      textSize(this.r/2);
+      text("***", -this.r/2, (7 * this.r)/24);
+    }
     fill(this.fill);
     triangle(-this.r/2,0,-this.r - finNoise,-finNoise * 2,-this.r - finNoise,finNoise * 2)
     pop();
@@ -594,6 +539,7 @@ function Shark() {
   this.r = 100;
   this.sightRadius = 500;
   this.history = [];
+  this.eatingVal = 0;
 
   this.run = function() {
     this.update();
@@ -684,10 +630,9 @@ function Shark() {
     this.xoff += 0.01;
     this.yoff += 0.01;
 
-    // for (var i = 0; i < this.history.length; i++) {
-    //   this.history[i].x += random(-4, 4);
-    //   this.history[i].y += random(-4, 4);
-    // }
+    if (this.eatingVal > 0) {
+      this.eatingVal -= 1;
+    }
 
     var v = createVector(this.position.x, this.position.y);
     this.history.push(v);
@@ -727,34 +672,31 @@ function Shark() {
     for (var i = bloops.length - 1; i >= 0; i--) {
       var bloopLocation = bloops[i].position;
       var d = p5.Vector.dist(this.position, bloopLocation);
-      // If we are, juice up our strength!
       if (d < this.r/2) {
+        this.eatingVal = 20;
         bloops[i].health = -1;
       }
     }
   }
 
-  // Start shark with full history (i.e. full body)
-  for (var i = 0; i < 100; i++) {
-    this.update();
-  }
-
   this.display = function() {
     var angle = this.velocity.heading();
     noStroke();
-    fill(56, 78, 89, 60);
+    fill(56, 78, 89, 155);
     rectMode(CENTER);
     push();
     translate(this.position.x, this.position.y);
     rotate(angle);
     // translate(this.position.x, this.position.)
     // rotate(angle);
-    ellipse(0, 0, this.r, this.r);
+    ellipse(this.eatingVal, 0, this.r, this.r);
     pop();
     // noFill();
     // beginShape();
+    fill(56, 78, 89, 60);
     for (var i = this.history.length - 1; i >= 0; i--) {
       var pos = this.history[i];
+
       ellipse(pos.x, pos.y, 0 + i, 0 + i);
       noStroke();
       if (i === 0) {
