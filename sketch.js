@@ -259,7 +259,7 @@ function Bloop(l, dna_) {
   // The lighter the bloop, the slower it is
   this.maxspeed = map(this.dna.genes[0], 70, 230, 4, 0.75);
   this.maxforce = map(this.dna.genes[0], 70, 230, 0.40, 0.075);
-  this.r = 30;
+  this.r = random(12, 30);
   this.acceleration = createVector(0, 0);
   this.velocity = createVector(random(-1, 1), random(-1, 1));
   this.fill = this.dna.genes[0];
@@ -291,7 +291,7 @@ function Bloop(l, dna_) {
     }
   }
 
-  // At any moment there is a teeny, tiny chance a bloop will reproduce
+  // At any moment there is a tiny chance a bloop will reproduce
   this.reproduce = function() {
     // asexual reproduction
     var reproductionChance = 0.0005;
@@ -299,14 +299,16 @@ function Bloop(l, dna_) {
     if (this.secondarySexChar) {
       reproductionChance = 0.001;
     }
-    if (random(1) < reproductionChance) {
+    // can only have children once they have grown
+    if (this.r > 29 && random(1) < reproductionChance) {
       // Child is exact copy of single parent
       var childDNA = this.dna.copy();
       // Child DNA can mutate
-      childDNA.mutate(0.1);
+      childDNA.mutate(0.05);
       var child = new Bloop(this.position, childDNA);
-      // 80% chance the child will inherit the green stars on its back if its parent has them
-      if (this.secondarySexChar && random(1) < 0.8) {
+      child.r = 12;
+      // 90% chance the child will inherit the green stars on its back if its parent has them
+      if (this.secondarySexChar && random(1) < 0.9) {
         child.secondarySexChar = true;
       }
       return child;
@@ -381,6 +383,11 @@ function Bloop(l, dna_) {
     this.xoff += 0.01;
     this.yoff += 0.01;
 
+    // little fish grow
+    if (this.r < 30) {
+      this.r += 0.05;
+    }
+
     // this.position.add(this.velocity);
     // Death always looming
     this.health -= 0.33;
@@ -426,14 +433,16 @@ function Bloop(l, dna_) {
     push();
     translate(this.position.x, this.position.y);
     rotate(angle);
-    rect(0, 0, this.r, this.r, 20, 20, 20, 20);
+    rect(0, 0, (7 * this.r)/8, (7 * this.r)/8, 20, 20, 20, 20);
+    rect(-this.r/3, -this.r/3, this.r/7, this.r/7);
+    rect(-this.r/3, this.r/3, this.r/7, this.r/7);
     triangle(0, this.r/2, 0, -this.r/2, -this.r, finNoise)
     fill(255);
-    ellipse(this.r/4, -this.r/4, 8, 8);
-    ellipse(this.r/4, this.r/4, 8, 8);
+    ellipse(this.r/5, -this.r/5, 8, 8);
+    ellipse(this.r/5, this.r/5, 8, 8);
     fill(98);
-    ellipse(this.r/4, -this.r/4, 4, 4);
-    ellipse(this.r/4, this.r/4, 4, 4);
+    ellipse(this.r/5, -this.r/5, 4, 4);
+    ellipse(this.r/5, this.r/5, 4, 4);
     if (this.secondarySexChar) {
       fill(213, 255, 156);
       textSize(this.r/2);
@@ -520,8 +529,8 @@ function Ghost(p, v, r, f) {
     fill(255, 255, 255, this.lifespan);
     fill(98, 98, 98, this.lifespan);
     textSize(this.r/3);
-    text("x", this.r/4, -this.r/8);
-    text("x", this.r/4, this.r/3);
+    text("x", this.r/6, -this.r/8);
+    text("x", this.r/6, this.r/3);
     fill(255, 255, 255, this.lifespan);
     triangle(-this.r/2,0,-this.r,0,-this.r,0);
     pop();
