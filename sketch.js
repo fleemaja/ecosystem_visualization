@@ -1,18 +1,44 @@
 var world;
-// var trees = []; var tree = [];
 var yoff = 0.0;
 var bloops = [];
 var ghosts = [];
 var sharks = [];
-var flock;
+var flock; var img;
+var foodChance = 0.03;
+var mutationRate = 0.05;
+var numSharks = 2;
 
 // Gradient Constants
 var c1, c2;
 
+$('.btn-primary').on('click', function() {
+  $('.info-options').toggle();
+});
+
+$('#food-chance').on("change", function() {
+  foodChance = $('#food-chance').val();
+});
+
+$('#mutation').on("change", function() {
+  mutationRate = $('#mutation').val();
+});
+
+$('#sharks').on("change", function() {
+  numSharks = $('#sharks').val();
+});
+
+$('.btn-danger').on('click', function() {
+  if (bloops.length > 0) {
+    for (var b = 0; b < bloops.length; b++) {
+      bloops[b].health = -1;
+    }
+  }
+});
+
 function setup() {
   var cHeight = window.innerHeight;
-  if (cHeight < 350) {
-    cHeight = 500;
+  if (cHeight < 600) {
+    cHeight = 600;
   }
   createCanvas(window.innerWidth, cHeight);
 
@@ -31,13 +57,15 @@ function setup() {
     flock2.addBoid(b);
   }
   // constructTrees();
-  // World starts with 10 creatures
-  // and 10 pieces of food
-  world = new World(12);
-  sharks = [new Shark(), new Shark()];
+  // World starts with 15 creatures
+  // and 20 food fish
+  world = new World(15);
+  for (var sh = 0; sh < 3; sh++) {
+    sharks.push(new Shark());
+  }
   // Set in motion before drawing
   for (var h = 0; h < 100; h++) {
-    world.run();
+    world.preRun();
   }
 }
 
@@ -58,11 +86,15 @@ function setGradient(x, y, w, h, c1, c2) {
 }
 
 function mousePressed() {
-  world.born(mouseX,mouseY);
+  if ($('.info-options').css('display') === 'none' || mouseX > 300) {
+    world.born(mouseX,mouseY);
+  }
 }
 
 function mouseDragged() {
-  world.born(mouseX,mouseY);
+  if ($('.info-options').css('display') === 'none' || mouseX > 200) {
+    world.born(mouseX,mouseY);
+  }
 }
 
 // Constructor
@@ -83,6 +115,12 @@ function World(num) {
     bloops.push(new Bloop(l, dna));
   }
 
+  this.preRun = function() {
+    for (var s = 0; s < sharks.length; s++) {
+      sharks[s].run();
+    }
+  }
+
   // Run the world
   this.run = function() {
     flock.run();
@@ -99,7 +137,7 @@ function World(num) {
       }
     }
 
-    for (var s = 0; s < sharks.length; s++) {
+    for (var s = 0; s < numSharks; s++) {
       sharks[s].run();
       sharks[s].eat();
     }
@@ -118,7 +156,9 @@ function World(num) {
       // If it's dead, kill it and make food
       if (b.dead()) {
         bloops.splice(i, 1);
-        this.food.add(b.position);
+        if (foodChance != 0) {
+          this.food.add(b.position);
+        }
         ghosts.push(new Ghost(b.position, b.velocity, b.r));
       }
       // Perhaps this bloop would like to make a baby?
@@ -169,7 +209,7 @@ function Food(num) {
     }
 
     // There's a small chance food will appear randomly
-    if (random(1) < 0.03) {
+    if (random(1) < foodChance) {
       var position = createVector(random(width),random(height));
       this.food.push(new fishFood(position));
     }
@@ -221,10 +261,9 @@ function DNA(newgenes) {
     this.genes = newgenes;
   } else {
     // The genetic sequence
-    // DNA is random floating point values between 0 and 1 (!!)
     this.genes = new Array(1);
     for (var i = 0; i < this.genes.length; i++) {
-      this.genes[i] = random(70,230);
+      this.genes[i] = random(90,230);
     }
   }
 
@@ -242,7 +281,7 @@ function DNA(newgenes) {
   this.mutate = function(m) {
     for (var i = 0; i < this.genes.length; i++) {
       if (random(1) < m) {
-         this.genes[i] = random(70,230);
+         this.genes[i] = random(90,230);
       }
     }
   }
@@ -257,13 +296,13 @@ function Bloop(l, dna_) {
   this.dna = dna_;   // DNA
   // DNA will determine color and maxspeed
   // The lighter the bloop, the slower it is
-  this.maxspeed = map(this.dna.genes[0], 70, 230, 4, 0.75);
-  this.maxforce = map(this.dna.genes[0], 70, 230, 0.40, 0.075);
+  this.maxspeed = map(this.dna.genes[0], 90, 230, 4, 0.75);
+  this.maxforce = map(this.dna.genes[0], 90, 230, 0.40, 0.075);
   this.r = random(12, 30);
   this.acceleration = createVector(0, 0);
   this.velocity = createVector(random(-1, 1), random(-1, 1));
   this.fill = this.dna.genes[0];
-  this.sightRadius = map(this.dna.genes[0], 70, 230, 500, 200);
+  this.sightRadius = map(this.dna.genes[0], 90, 230, 500, 200);
   if (random(1) < 0.25) {
     this.secondarySexChar = true;
   } else {
@@ -294,21 +333,21 @@ function Bloop(l, dna_) {
   // At any moment there is a tiny chance a bloop will reproduce
   this.reproduce = function() {
     // asexual reproduction
-    var reproductionChance = 0.0005;
-    // Impressive Green markings on a fish's back get the fish rewarded with a doubled chance of reproduction at any given moment
+    var reproductionChance = 0.0003;
+    // Green markings on a fish's back give the fish a four times higher chance of reproducing at any given moment
     if (this.secondarySexChar) {
-      reproductionChance = 0.001;
+      reproductionChance = 0.0012;
     }
     // can only have children once they have grown
     if (this.r > 29 && random(1) < reproductionChance) {
       // Child is exact copy of single parent
       var childDNA = this.dna.copy();
       // Child DNA can mutate
-      childDNA.mutate(0.05);
+      childDNA.mutate(mutationRate);
       var child = new Bloop(this.position, childDNA);
       child.r = 12;
       // 90% chance the child will inherit the green stars on its back if its parent has them
-      if (this.secondarySexChar && random(1) < 0.9) {
+      if (this.secondarySexChar && random(1) < 1 - mutationRate) {
         child.secondarySexChar = true;
       }
       return child;
@@ -331,20 +370,32 @@ function Bloop(l, dna_) {
 
   this.seek = function(f, s) {
     var food = f.getFood();
+    var closest;
+    var closestDist = Number.MAX_SAFE_INTEGER;
     for (var i = 0; i < food.length; i++) {
       var target = food[i].position;
       if (this.withinSight(target)) {
+
         var desired = p5.Vector.sub(target,this.position);  // A vector pointing from the location to the target
 
-        // Scale to maximum speed
-        desired.setMag(this.maxspeed);
+        var desiredDist = desired.mag();
 
-        // Steering = Desired minus velocity
-        var steer = p5.Vector.sub(desired,this.velocity);
-        steer.limit(this.maxforce);  // Limit to maximum steering force
-
-        this.applyForce(steer);
+        if (desiredDist < closestDist) {
+          closest = desired;
+          closestDist = desiredDist;
+        }
       }
+    }
+
+    if (closest) {
+      // Scale to maximum speed
+      closest.setMag(this.maxspeed);
+
+      // Steering = Desired minus velocity
+      var steer = p5.Vector.sub(closest,this.velocity);
+      steer.limit(this.maxforce);  // Limit to maximum steering force
+
+      this.applyForce(steer);
     }
   };
 
@@ -354,13 +405,13 @@ function Bloop(l, dna_) {
       var desired = p5.Vector.sub(target,this.position);  // A vector pointing from the location to the target
 
       // Scale to maximum speed
-      desired.setMag(this.maxspeed * 1.6);
+      desired.setMag(this.maxspeed);
 
       // Steering = Desired minus velocity
       var steer = p5.Vector.sub(desired,this.velocity);
-      steer.limit(this.maxforce * 1.6);  // Limit to maximum steering force
+      steer.limit(this.maxforce);  // Limit to maximum steering force
 
-      this.applyForce(steer.mult(-1));
+      this.applyForce(steer.mult(-2));
     }
   }
 
@@ -383,7 +434,6 @@ function Bloop(l, dna_) {
     this.xoff += 0.01;
     this.yoff += 0.01;
 
-    // little fish grow
     if (this.r < 30) {
       this.r += 0.05;
     }
@@ -398,17 +448,17 @@ function Bloop(l, dna_) {
 
     var desired = null;
 
-    if (this.position.x < 50) {
+    if (this.position.x < 200) {
       desired = createVector(this.maxspeed, this.velocity.y);
     }
-    else if (this.position.x > width - 50) {
+    else if (this.position.x > width - 100) {
       desired = createVector(-this.maxspeed, this.velocity.y);
     }
 
-    if (this.position.y < 50) {
+    if (this.position.y < 100) {
       desired = createVector(this.velocity.x, this.maxspeed);
     }
-    else if (this.position.y > height - 50) {
+    else if (this.position.y > height - 100) {
       desired = createVector(this.velocity.x, -this.maxspeed);
     }
 
@@ -538,7 +588,7 @@ function Ghost(p, v, r, f) {
 }
 
 function Shark() {
-  this.position = createVector(random(width), random(height));
+  this.position = createVector(random(width + 100, width + 300), random(height));
   this.velocity = createVector();
   this.acceleration = createVector();
   this.xoff = random(1000);
@@ -563,34 +613,35 @@ function Shark() {
     this.acceleration.add(force);
   };
 
-  this.withinSight = function(target) {
-    var heading = this.velocity;
-    var angleBetween = p5.Vector.angleBetween(heading, target);
-    var targetVec = p5.Vector.sub(target,this.position);
-    if (abs(degrees(angleBetween)) <= 90 && targetVec.mag() < this.sightRadius/2) {
+  this.seek = function() {
+    var closest;
+    var closestDist = Number.MAX_SAFE_INTEGER;
+    for (var i = 0; i < bloops.length; i++) {
+      var target = bloops[i].position;
+      var desired = p5.Vector.sub(target,this.position);  // A vector pointing from the location to the target
+      var desiredDistance = desired.mag();
+      if (desiredDistance < closestDist) {
+        closest = desired;
+        closestDist = desiredDistance;
+      }
+    }
+
+    if (typeof closest != "undefined") {
+      this.targetBloop = closest;
+      closest.setMag(this.maxspeed);
+      var steer = p5.Vector.sub(closest,this.velocity);
+      steer.limit(this.maxforce);  // Limit to maximum steering force
+      this.applyForce(steer);
+    }
+  };
+
+  function samePosition(p1, p2) {
+    if (p1.x === p2.x && p1.y === p2.y) {
       return true;
     } else {
       return false;
     }
-  };
-
-  this.seek = function() {
-    for (var i = 0; i < bloops.length; i++) {
-      var target = bloops[i].position;
-      if (this.withinSight(target)) {
-        var desired = p5.Vector.sub(target,this.position);  // A vector pointing from the location to the target
-
-        // Scale to maximum speed
-        desired.setMag(this.maxspeed);
-
-        // Steering = Desired minus velocity
-        var steer = p5.Vector.sub(desired,this.velocity);
-        steer.limit(this.maxforce);  // Limit to maximum steering force
-
-        this.applyForce(steer);
-      }
-    }
-  };
+  }
 
   this.separate = function() {
     var desiredseparation = 200.0;
@@ -620,7 +671,7 @@ function Shark() {
       steer.normalize();
       steer.mult(this.maxspeed);
       steer.sub(this.velocity);
-      steer.limit(this.maxforce);
+      steer.limit(this.maxforce * 1.1);
     }
     this.applyForce(steer);
   };
@@ -653,17 +704,17 @@ function Shark() {
   this.borders = function() {
     var desired = null;
 
-    if (this.position.x < 50) {
+    if (this.position.x < 200) {
       desired = createVector(this.maxspeed, this.velocity.y);
     }
-    else if (this.position.x > width - 50) {
+    else if (this.position.x > width - 100) {
       desired = createVector(-this.maxspeed, this.velocity.y);
     }
 
-    if (this.position.y < 50) {
+    if (this.position.y < 100) {
       desired = createVector(this.velocity.x, this.maxspeed);
     }
-    else if (this.position.y > height - 50) {
+    else if (this.position.y > height - 100) {
       desired = createVector(this.velocity.x, -this.maxspeed);
     }
 
@@ -706,7 +757,7 @@ function Shark() {
     for (var i = this.history.length - 1; i >= 0; i--) {
       var pos = this.history[i];
 
-      ellipse(pos.x, pos.y, 0 + i, 0 + i);
+      ellipse(pos.x, pos.y, i, i);
       noStroke();
       if (i === 0) {
         push();
@@ -716,7 +767,7 @@ function Shark() {
         rect(0, 0, 24, 48, 0, 20, 20, 0);
         // triangle(-10, 0, 16, 32, 16, -32);
         pop();
-      } else if (i === 64) {
+      } else if (i === 74) {
         push();
         translate(pos.x, pos.y);
         rotate(angle);
