@@ -1,5 +1,7 @@
 ## Ocean Ecosystem
 
+![ecosystem](http://res.cloudinary.com/dkw0kkkgd/image/upload/v1471993986/ecosystem_uh7mur.png)
+
 Genetic algorithms experiment that demonstrates natural and sexual selection. Fish DNA codes for color, agility, and whether or not each fish has an impressive display of green stars on their back (a secondary sexual characteristic).
 
 Paler fish are genetically more anemic/unhealthy and lack the speed and agility of darker fish. Competing for food (death is a ticking clock if the fish doesn't eat) and avoiding predators is much more difficult for these fish and natural selection tends to weed them out in favor of the more robust darker colored fish.
@@ -13,6 +15,4 @@ The user can interact with the simulation in a bunch of ways:
 * clicking or dragging the mouse to manually add more fish to the ecosystem
 * instantaneously exterminating the population of fish
 
-Codepen (Live Link): [http://codepen.io/fleemaja/full/PzWjgd/](http://codepen.io/fleemaja/full/PzWjgd/)
-
-![ecosystem](http://res.cloudinary.com/dkw0kkkgd/image/upload/v1471993986/ecosystem_uh7mur.png)
+### Codepen (Live Link): [http://codepen.io/fleemaja/full/PzWjgd/](http://codepen.io/fleemaja/full/PzWjgd/)
